@@ -18,7 +18,6 @@ class LinearAdapter(nn.Module):
         self.linear = nn.Linear(embedding_size, output_size or embedding_size)
     
     def forward(self, x):
-        breakpoint()
         return self.linear(self.embed.encode(x, convert_to_tensor=True))
     
     def encode(self, xs: List[str], batch_size: int, **kwargs):
@@ -28,7 +27,7 @@ class LinearAdapter(nn.Module):
         return self.encode(queries, batch_size, **kwargs)
     
     def encode_corpus(self, corpus: List[Dict[str, str]], batch_size: int, **kwargs):
-        breakpoint()
+        print("Encoding corpus...")
         if self.query_only:
             return self.embed.encode([stringify_corpus_item(item) for item in corpus], batch_size=batch_size, convert_to_tensor=True)
         else:
@@ -54,8 +53,8 @@ class LinearAdapter(nn.Module):
             for query, good_doc, bad_doc in train_data:
                 optimizer.zero_grad()
                 query_embedding = self(query)
-                good_doc_embedding = self(good_doc)
-                bad_doc_embedding = self(bad_doc)
+                good_doc_embedding = self.embed.encode(good_doc, convert_to_tensor=True) if self.query_only else self(good_doc)
+                bad_doc_embedding = self.embed.encode(bad_doc, convert_to_tensor=True) if self.query_only else self(bad_doc)
                 
                 loss = loss_fn(query_embedding, good_doc_embedding, bad_doc_embedding)
                 loss.backward()

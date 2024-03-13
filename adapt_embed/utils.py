@@ -8,6 +8,11 @@ import matplotlib.pyplot as plt
 def get_proj_dir():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+def get_device():
+    return torch.device('cuda' if torch.cuda.is_available() 
+                        else 'mps' if torch.backends.mps.is_available() 
+                        else 'cpu')
+
 def plot_comparison(results_with_names, exp_name, split='test', save=True, show=False, save_dir=None):
     """
     Plots a comparison graph for an arbitrary number of results dictionaries.
@@ -52,7 +57,7 @@ def plot_comparison(results_with_names, exp_name, split='test', save=True, show=
         ax.legend()
 
         if save:
-            save_dir_actual = save_dir or f'results/{exp_name}/{task}/imgs'
+            save_dir_actual = save_dir or f'{get_proj_dir()}/results/{exp_name}/{task}/imgs'
             os.makedirs(save_dir_actual, exist_ok=True)
             plt.savefig(f"{save_dir_actual}/{metric}.png")
 

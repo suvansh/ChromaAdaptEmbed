@@ -5,20 +5,21 @@ from mteb import MTEB
 from sentence_transformers import SentenceTransformer
 
 from linear import LinearAdapter
-from utils import get_proj_dir, plot_comparison
+from utils import get_proj_dir, plot_comparison, get_device
 
 proj_dir = get_proj_dir()
+device = get_device()
 
 """ What are we doing? """
 model_name = "all-MiniLM-L6-v2"
-model = SentenceTransformer(model_name)
+model = SentenceTransformer(model_name, device=device)
 exp_name = "linear"
 task = 'CQADupstackEnglishRetrieval'
 
 
 """ Load/train the model """
 weights_file = f"{proj_dir}/results/{exp_name}/{task}/weights.pt"
-adapted_model = LinearAdapter(model, model.get_sentence_embedding_dimension())
+adapted_model = LinearAdapter(model, model.get_sentence_embedding_dimension()).to(device)
 if os.path.exists(weights_file):
     adapted_model.load_state_dict(torch.load(weights_file))
 else:
@@ -27,12 +28,12 @@ else:
     torch.save(adapted_model.state_dict(), weights_file)
 
 qa_weights_file = f"{proj_dir}/results/{exp_name}/{task}/qa_weights.pt"
-q_adapted_model = LinearAdapter(model, model.get_sentence_embedding_dimension(), query_only=True)
+q_adapted_model = LinearAdapter(model, model.get_sentence_embedding_dimension(), query_only=True).to(device)
 if os.path.exists(qa_weights_file):
     q_adapted_model.load_state_dict(torch.load(qa_weights_file))
 else:
     task_class = MTEB(tasks=[task]).tasks[0]
-    q_adapted_model.fit(task_class, num_epochs=10)
+    q_adapted_model.fit(task_class, num_epochs=10, lr=3e-2)
     torch.save(q_adapted_model.state_dict(), qa_weights_file)
 
 """ Evaluate the model """

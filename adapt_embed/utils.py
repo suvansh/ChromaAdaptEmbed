@@ -12,7 +12,12 @@ from openai import OpenAI
 
 from adapt_embed.prompts import synthetic_data
 
-client = OpenAI()
+client = None
+def get_client():
+    global client
+    if client is None:
+        client = OpenAI()
+    return client
 
 def get_proj_dir():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -49,22 +54,28 @@ def plot_comparison(results_with_names, exp_name, variant, split='test', save=Tr
     task = task.pop()
     
     n_groups = len(data_sets[0][0][list(data_sets[0][0].keys())[0]])  # Number of groups (1, 3, 5, 10, 100, 1000)
-    index = np.arange(n_groups) * 1.5
-    bar_width = 0.35
+    n_datasets = len(data_sets)  # Number of datasets to compare
+    spacing = 0.2  # Spacing between groups of bars
+    group_width = 0.8  # Total width of each group of bars
+    bar_width = group_width / n_datasets  # Width of each individual bar
+    index = np.arange(n_groups) * (group_width + spacing)
 
     # Plot each metric for all datasets
     for metric in data_sets[0][0].keys():
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(12, 6))
         for i, (data, name) in enumerate(data_sets):
             k_order = sorted(data[metric].keys(), key=lambda x: int(x.split('_at_')[1]))
             bars = ax.bar(index + i * bar_width, [data[metric][k] for k in k_order], bar_width, label=name)
-
+        
         ax.set_xlabel('@k')
         ax.set_ylabel(metric.upper())
         ax.set_title(f'{metric.upper()} on {exp_name}')
-        ax.set_xticks(index + bar_width * len(data_sets) / 2)
+        ax.set_xticks(index + group_width / 2)
         ax.set_xticklabels([k.split('_at_')[1] for k in k_order])
-        ax.legend()
+        ax.set_ylim(0, 1)
+        ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1), borderaxespad=0)
+        
+        fig.subplots_adjust(right=0.8)
 
         if save:
             snapshot_dir = logger.get_snapshot_dir()
@@ -89,9 +100,10 @@ def stringify_corpus_item(item: dict | str, sep='\n') -> str:
         
 def gen_synthetic_data(query, n):
     documents = []
+    openai_client = get_client()
     query_messages = synthetic_data.get_messages(query)
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(client.chat.completions.create,
+        futures = [executor.submit(openai_client.chat.completions.create,
                                    model="gpt-4-turbo-preview",
                                    messages=query_messages)
                     for _ in range(n)]

@@ -108,40 +108,41 @@ def run_experiment(variant):
 
 if __name__ == "__main__":
     """ hyperparameters """
-    # triplet loss
-    variants = dict(
-        exp_prefix=['finetune'],
-        model_name=["all-MiniLM-L6-v2"],
-        task=['CQADupstackEnglishRetrieval'],
-        split=['test'],
-        data_augmentation_threshold=[5],
-        num_epochs=[12],
-        batch_size=[128],
-        lr=[3e-3, 1e-3, 3e-4, 1e-4, 3e-5],
-        score_triplet=[False],
-        triplet_margin=[1/3, 1, 3]
-    )
-    # converting triplets to classification and using loss on cosine similarity
-    # variants = dict(
-    #     exp_prefix=['finetune-triplet-score'],
-    #     model_name=["all-MiniLM-L6-v2"],
-    #     task=['CQADupstackEnglishRetrieval'],
-    #     split=['test'],
-    #     data_augmentation_threshold=[5],
-    #     num_epochs=[15],
-    #     batch_size=[128],
-    #     lr=[3e-5, 1e-4, 3e-4, 1e-3, 3e-3],
-    #     score_triplet=[True],
-    #     loss_type=['mse', 'bce']
-    # )
+    variants_list = [
+        # triplet loss
+        dict(
+            exp_prefix=['finetune'],
+            model_name=["all-MiniLM-L6-v2"],
+            task=['CQADupstackEnglishRetrieval'],
+            split=['test'],
+            data_augmentation_threshold=[5],
+            num_epochs=[12],
+            batch_size=[128],
+            lr=[3e-3, 1e-3, 3e-4, 1e-4, 3e-5],
+            score_triplet=[False],
+            triplet_margin=[1/3, 1, 3]
+        ),
+        # converting triplets to classification and using loss on cosine similarity
+        dict(
+            exp_prefix=['finetune-triplet-score'],
+            model_name=["all-MiniLM-L6-v2"],
+            task=['CQADupstackEnglishRetrieval'],
+            split=['test'],
+            data_augmentation_threshold=[5],
+            num_epochs=[15],
+            batch_size=[128],
+            lr=[3e-5, 1e-4, 3e-4, 1e-3, 3e-3],
+            score_triplet=[True],
+            loss_type=['mse', 'bce']
+        )
+    ]
     results_files = []
     results_every = 3
 
-    search_space = {}
-    sweeper = DeterministicHyperparameterSweeper(variants)
+    variants = [variant for variants in variants_list for variant in DeterministicHyperparameterSweeper(variants).iterate_hyperparameters()]
 
     """ run experiments """
-    for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
+    for exp_id, variant in enumerate(variants):
         variant['results_files'] = results_files
         variant['results_every'] = results_every
         launcher_util.run_experiment(

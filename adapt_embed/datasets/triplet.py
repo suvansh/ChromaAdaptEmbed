@@ -66,7 +66,7 @@ class TripletDataset(Dataset):
                     self.negative_doc_ids = json.load(f)
         else:
             self.retrieval_task = retrieval_task
-            self.task_description = retrieval_task.description
+            self.task_name = retrieval_task.metadata.name
             self.retrieval_task.load_data(**load_data_kwargs)
 
             self.proportional_relevance_threshold = proportional_relevance_threshold
@@ -154,7 +154,7 @@ class TripletDataset(Dataset):
             'synthetic_data': self.synthetic_data,
             'data_augmentation_threshold': self.data_augmentation_threshold,
             'split': self.split,
-            'task_description': self.task_description
+            'task_name': self.task_name
         }
         with open(os.path.join(directory, 'attributes.json'), 'w') as f:
             json.dump(attributes, f, indent=4)

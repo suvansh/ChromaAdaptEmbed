@@ -53,9 +53,8 @@ def run_experiment(variant):
                                      split=split, relevance_threshold=0.5,
                                      negative_sampling=data_negative_sampling,
                                      synthetic_data=data_synthetic_gen,
-                                     data_augmentation_threshold=data_augmentation_threshold,
-                                     score_triplet=score_triplet
-                            )
+                                     data_augmentation_threshold=data_augmentation_threshold
+                            ), score_triplet=score_triplet
                         )
         return dataset
     
@@ -72,7 +71,7 @@ def run_experiment(variant):
         if score_triplet:
             valid_data = zip(*[(*dataset[i].texts, dataset[i].label) for i in range(0, 2501, 5)])  # 500 pairs, offset is odd to get pos and neg labels since they alternate
             evaluator = evaluation.EmbeddingSimilarityEvaluator(*valid_data, name=task, batch_size=batch_size)
-            loss_fn = losses.CosineSimilarityLoss(model, loss_fct=torch_loss)
+            loss_fn = losses.CosineSimilarityLoss(model, loss_fct=torch_loss, cos_score_transformation=lambda x: torch.clamp(x, 1e-8, 1-1e-8))
         else:
             valid_data = zip(*[dataset[i].texts for i in range(0, 2501, 5)])
             evaluator = evaluation.TripletEvaluator(*valid_data, name=task, batch_size=batch_size)
@@ -117,7 +116,7 @@ if __name__ == "__main__":
             split=['test'],
             data_augmentation_threshold=[5],
             num_epochs=[12],
-            batch_size=[128],
+            batch_size=[64],
             lr=[3e-3, 1e-3, 3e-4, 1e-4, 3e-5],
             score_triplet=[False],
             triplet_margin=[1/3, 1, 3]
@@ -130,10 +129,10 @@ if __name__ == "__main__":
             split=['test'],
             data_augmentation_threshold=[5],
             num_epochs=[15],
-            batch_size=[128],
+            batch_size=[64],
             lr=[3e-5, 1e-4, 3e-4, 1e-3, 3e-3],
             score_triplet=[True],
-            loss_type=['mse', 'bce']
+            loss_type=['bce', 'mse']
         )
     ]
     results_files = []

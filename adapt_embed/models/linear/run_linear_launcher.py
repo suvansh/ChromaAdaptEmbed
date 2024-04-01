@@ -123,11 +123,12 @@ if __name__ == "__main__":
             model_name=["all-MiniLM-L6-v2"],
             task=['CQADupstackEnglishRetrieval'],
             split=['test'],
-            num_epochs=[10],
+            num_epochs=[15],
             lr=[1e-2, 3e-3, 1e-3, 3e-4],
             batch_size=[256],
-            triplet_margin=[1/3, 1, 3],
+            triplet_margin=[1/3, 1],
             loss_type=['triplet'],
+            data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],
             data_synthetic_gen=[True, False]
         ),
@@ -136,26 +137,13 @@ if __name__ == "__main__":
             model_name=["all-MiniLM-L6-v2"],
             task=['CQADupstackEnglishRetrieval'],
             split=['test'],
-            num_epochs=[10],
+            num_epochs=[15],
             lr=[1e-2, 3e-3, 1e-3, 3e-4],
-            batch_size=[256],
-            loss_type=['mse', 'bce'],
-            data_augmentation_threshold=[5],
-            data_synthetic_gen=[True, False]
-        )
-    ]
-    variants_list = [
-        dict(
-            model_name=["all-MiniLM-L6-v2"],
-            task=['CQADupstackEnglishRetrieval'],
-            split=['test'],
-            num_epochs=[1],
-            lr=[1e-2],
             batch_size=[256],
             loss_type=['mse'],
             data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],
-            data_synthetic_gen=[True]
+            data_synthetic_gen=[True, False]
         )
     ]
 

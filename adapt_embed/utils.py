@@ -143,7 +143,6 @@ def gen_synthetic_data(query, n, examples=None, llm="gpt-4-turbo-preview"):
             for future in concurrent.futures.as_completed(futures):
                 response = future.result()
                 document = response.content[0].text
-                breakpoint()
                 documents.append(document)
     else:
         raise ValueError(f"Unsupported LLM model: {llm}")

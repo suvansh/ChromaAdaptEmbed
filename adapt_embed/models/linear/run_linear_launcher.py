@@ -28,8 +28,8 @@ def run_experiment(variant):
     loss_type = variant['loss_type']
     data_negative_sampling = variant.get('data_negative_sampling', True)
     data_synthetic_gen = variant.get('data_synthetic_gen', False)
+    data_synthetic_data_path = variant.get('data_synthetic_data_path', None)
     data_augmentation_threshold = variant.get('data_augmentation_threshold', 10)
-    force = variant.get('force', False)
 
     if triplet_margin is None and loss_type == 'triplet':
         raise ValueError("Must provide triplet_margin if using triplet loss.")
@@ -49,6 +49,7 @@ def run_experiment(variant):
                                          split=split, relevance_threshold=0.5,
                                          negative_sampling=data_negative_sampling,
                                          synthetic_data=data_synthetic_gen,
+                                         synthetic_data_path=data_synthetic_data_path,
                                          data_augmentation_threshold=data_augmentation_threshold)
             else:
                 dataset = PairwiseScoreDataset(MTEB(tasks=[task]).tasks[0],
@@ -119,23 +120,25 @@ if __name__ == "__main__":
             model_name=["all-MiniLM-L6-v2"],
             task=['CQADupstackEnglishRetrieval'],
             split=['test'],
-            num_epochs=[15],
+            num_epochs=[10],
             lr=[1e-2, 3e-3, 1e-3, 3e-4],
             batch_size=[256],
             triplet_margin=[1/3, 1, 3],
             loss_type=['triplet'],
-            data_augmentation_threshold=[5]
+            data_augmentation_threshold=[5],
+            data_synthetic_gen=[True, False]
         ),
         # pairwise
         dict(
             model_name=["all-MiniLM-L6-v2"],
             task=['CQADupstackEnglishRetrieval'],
             split=['test'],
-            num_epochs=[15],
+            num_epochs=[10],
             lr=[1e-2, 3e-3, 1e-3, 3e-4],
             batch_size=[256],
             loss_type=['mse', 'bce'],
-            data_augmentation_threshold=[5]
+            data_augmentation_threshold=[5],
+            data_synthetic_gen=[True, False]
         )
     ]
 
@@ -145,7 +148,7 @@ if __name__ == "__main__":
         launcher_util.run_experiment(
             run_experiment,
             variant=variant,
-            exp_prefix='linear',
+            exp_prefix='linear-synthetic',
             mode='local',
             snapshot_mode='last',
             base_log_dir=os.path.join(proj_dir, 'results', 'logs')

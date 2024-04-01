@@ -4,7 +4,6 @@ import numpy as np
 import json
 import concurrent
 from mteb import MTEB
-import itertools
 from datetime import datetime
 import matplotlib.pyplot as plt
 from launchkit.logging import logger
@@ -98,18 +97,23 @@ def stringify_corpus_item(item: dict | str, sep='\n') -> str:
     else:
         return item.strip()
         
-def gen_synthetic_data(query, n):
+def gen_synthetic_data(query, n, examples=None, llm="gpt-4-turbo-preview"):
     documents = []
-    openai_client = get_client()
-    query_messages = synthetic_data.get_messages(query)
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(openai_client.chat.completions.create,
-                                   model="gpt-4-turbo-preview",
-                                   messages=query_messages)
-                    for _ in range(n)]
-        for future in concurrent.futures.as_completed(futures):
-            completion = future.result()
-            documents.append(completion.choices[0].message.content)
+    if llm.startswith("gpt"):
+        openai_client = get_client()
+        query_messages = synthetic_data.get_messages(query, examples=examples)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(openai_client.chat.completions.create,
+                                    model=llm,
+                                    messages=query_messages)
+                        for _ in range(n)]
+            for future in concurrent.futures.as_completed(futures):
+                completion = future.result()
+                documents.append(completion.choices[0].message.content)
+    elif llm.startswith("claude"):
+        raise NotImplementedError("Claude models not yet supported")
+    else:
+        raise ValueError(f"Unsupported LLM model: {llm}")
     return documents
 
 def get_mteb_results(task, results_file, model=None):

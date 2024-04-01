@@ -30,6 +30,7 @@ def run_experiment(variant):
     data_synthetic_gen = variant.get('data_synthetic_gen', False)
     data_synthetic_data_path = variant.get('data_synthetic_data_path', None)
     data_augmentation_threshold = variant.get('data_augmentation_threshold', 10)
+    data_llm = variant.get('data_llm', 'gpt-4-turbo-preview')
 
     if triplet_margin is None and loss_type == 'triplet':
         raise ValueError("Must provide triplet_margin if using triplet loss.")
@@ -50,13 +51,15 @@ def run_experiment(variant):
                                          negative_sampling=data_negative_sampling,
                                          synthetic_data=data_synthetic_gen,
                                          synthetic_data_path=data_synthetic_data_path,
-                                         data_augmentation_threshold=data_augmentation_threshold)
+                                         data_augmentation_threshold=data_augmentation_threshold,
+                                         llm=data_llm)
             else:
                 dataset = PairwiseScoreDataset(MTEB(tasks=[task]).tasks[0],
                                                split=split, relevance_threshold=0.5, normalized=True,
                                                negative_sampling=data_negative_sampling,
                                                synthetic_data=data_synthetic_gen,
-                                               data_augmentation_threshold=data_augmentation_threshold)
+                                               data_augmentation_threshold=data_augmentation_threshold,
+                                               llm=data_llm)
         return dataset
     
     def get_results(model, task):
@@ -139,6 +142,20 @@ if __name__ == "__main__":
             loss_type=['mse', 'bce'],
             data_augmentation_threshold=[5],
             data_synthetic_gen=[True, False]
+        )
+    ]
+    variants_list = [
+        dict(
+            model_name=["all-MiniLM-L6-v2"],
+            task=['CQADupstackEnglishRetrieval'],
+            split=['test'],
+            num_epochs=[1],
+            lr=[1e-2],
+            batch_size=[256],
+            loss_type=['mse'],
+            data_llm=['claude-3-sonnet-20240229'],
+            data_augmentation_threshold=[5],
+            data_synthetic_gen=[True]
         )
     ]
 

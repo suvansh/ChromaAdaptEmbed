@@ -8,14 +8,27 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from launchkit.logging import logger
 from openai import OpenAI
+from anthropic import Anthropic
 
 from adapt_embed.prompts import synthetic_data
 
-client = None
-def get_client():
-    global client
-    if client is None:
-        client = OpenAI()
+import logging
+file_logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+
+openai_client = None
+anthropic_client = None
+def get_client(llm_type="openai"):
+    global openai_client, anthropic_client
+    if llm_type == "openai":
+        if openai_client is None:
+            openai_client = OpenAI()
+        client = openai_client
+    elif llm_type == "anthropic":
+        if anthropic_client is None:
+            anthropic_client = Anthropic()
+        client = anthropic_client
     return client
 
 def get_proj_dir():
@@ -27,7 +40,7 @@ def get_device():
                         else 'mps' if torch.backends.mps.is_available() 
                         else 'cpu')
 
-def plot_comparison(results_with_names, exp_name, variant, split='test', save=True, show=False, save_dir=None):
+def plot_comparison(results_with_names, exp_name="", variant=None, split='test', save=True, show=False, save_dir=None):
     """
     Plots a comparison graph for an arbitrary number of results dictionaries.
     
@@ -39,6 +52,7 @@ def plot_comparison(results_with_names, exp_name, variant, split='test', save=Tr
     show: Whether to show the generated plots.
     save_dir: Directory to save the plots. If None, a default directory structure will be used.
     """
+    variant = variant or {}
     data_sets = []
     task = set()
     for results, name in results_with_names:
@@ -49,8 +63,10 @@ def plot_comparison(results_with_names, exp_name, variant, split='test', save=Tr
             for metric in metrics if '_at_' in metric
         }
         data_sets.append((data, name))
-    assert len(task) == 1, f"All results dictionaries must be from the same task. Tasks found: {task}"
+    if len(task) != 1:
+        file_logger.warn(f"All results dictionaries should be from the same task. Tasks found: {task}. One of these tasks will be chosen at random.")
     task = task.pop()
+    file_logger.info(f"Analyzing task {task}.")
     
     n_groups = len(data_sets[0][0][list(data_sets[0][0].keys())[0]])  # Number of groups (1, 3, 5, 10, 100, 1000)
     n_datasets = len(data_sets)  # Number of datasets to compare
@@ -68,7 +84,7 @@ def plot_comparison(results_with_names, exp_name, variant, split='test', save=Tr
         
         ax.set_xlabel('@k')
         ax.set_ylabel(metric.upper())
-        ax.set_title(f'{metric.upper()} on {exp_name}')
+        ax.set_title(f'{metric.upper()}{" on " + exp_name if exp_name else ""}')
         ax.set_xticks(index + group_width / 2)
         ax.set_xticklabels([k.split('_at_')[1] for k in k_order])
         ax.set_ylim(0, 1)
@@ -81,7 +97,7 @@ def plot_comparison(results_with_names, exp_name, variant, split='test', save=Tr
             if snapshot_dir:
                 default_save_dir = os.path.join(snapshot_dir, 'imgs')
             else:
-                default_save_dir = os.path.join(get_proj_dir(), results, exp_name, variant['model_name'], task, 'imgs',
+                default_save_dir = os.path.join(get_proj_dir(), 'results', exp_name or 'default', variant.get('model_name', 'default'), task, 'imgs',
                                                 datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
             save_dir_actual = save_dir or default_save_dir
             os.makedirs(save_dir_actual, exist_ok=True)
@@ -99,9 +115,11 @@ def stringify_corpus_item(item: dict | str, sep='\n') -> str:
         
 def gen_synthetic_data(query, n, examples=None, llm="gpt-4-turbo-preview"):
     documents = []
+
+    query_messages = synthetic_data.get_messages(query, examples=examples)
     if llm.startswith("gpt"):
-        openai_client = get_client()
-        query_messages = synthetic_data.get_messages(query, examples=examples)
+        llm_type = "openai"
+        openai_client = get_client(llm_type)
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(openai_client.chat.completions.create,
                                     model=llm,
@@ -109,9 +127,24 @@ def gen_synthetic_data(query, n, examples=None, llm="gpt-4-turbo-preview"):
                         for _ in range(n)]
             for future in concurrent.futures.as_completed(futures):
                 completion = future.result()
-                documents.append(completion.choices[0].message.content)
+                document = completion.choices[0].message.content
+                documents.append(document)
     elif llm.startswith("claude"):
-        raise NotImplementedError("Claude models not yet supported")
+        llm_type = "anthropic"
+        anthropic_client = get_client(llm_type)
+        system_message = query_messages.pop(0)['content']
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(anthropic_client.messages.create,
+                                       model=llm,
+                                       max_tokens=200,
+                                       messages=query_messages,
+                                       system=system_message)
+                       for _ in range(n)]
+            for future in concurrent.futures.as_completed(futures):
+                response = future.result()
+                document = response.content[0].text
+                breakpoint()
+                documents.append(document)
     else:
         raise ValueError(f"Unsupported LLM model: {llm}")
     return documents

@@ -58,6 +58,7 @@ def run_experiment(variant):
                                                split=split, relevance_threshold=0.5, normalized=True,
                                                negative_sampling=data_negative_sampling,
                                                synthetic_data=data_synthetic_gen,
+                                               synthetic_data_path=data_synthetic_data_path,
                                                data_augmentation_threshold=data_augmentation_threshold,
                                                llm=data_llm)
         return dataset
@@ -126,7 +127,7 @@ if __name__ == "__main__":
             num_epochs=[15],
             lr=[1e-2, 3e-3, 1e-3, 3e-4],
             batch_size=[256],
-            triplet_margin=[1/3, 1],
+            triplet_margin=[0.3],
             loss_type=['triplet'],
             data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],

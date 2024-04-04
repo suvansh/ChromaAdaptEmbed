@@ -70,7 +70,7 @@ def run_experiment(variant):
         os.makedirs(os.path.dirname(weights_file), exist_ok=True)
         losses = []
         if os.path.exists(weights_file) and not force:
-            adapted_model.load_state_dict(torch.load(weights_file))
+            adapted_model.load(weights_file)
         else:
             print(f"Training {adapter_type} Linear Adapter...")
             losses = adapted_model.fit(get_dataset(), num_epochs=num_epochs, lr=lr, batch_size=batch_size, loss_type=loss_type, margin=triplet_margin, model_save_path=weights_file)

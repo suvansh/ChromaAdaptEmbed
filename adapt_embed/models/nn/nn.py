@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -97,7 +98,10 @@ class NNAdapter(nn.Module):
         if model_save_path:
             if isdir(model_save_path):
                 model_save_path = f"{model_save_path}/weights.pt"
-            torch.save(self.state_dict(), model_save_path)
+            if self.separate_embeddings:
+                torch.save({'query_adapter': self.query_adapter.state_dict(), 'doc_adapter': self.doc_adapter.state_dict()}, model_save_path)
+            else:
+                torch.save(self.model.state_dict(), model_save_path)
         return losses
     
     def _train_triplet(self, train_data, optimizer, num_epochs=10, log_losses=True, margin=1.0):
@@ -142,9 +146,20 @@ class NNAdapter(nn.Module):
             if log_losses:
                 print(f"Epoch {epoch+1}/{num_epochs}, Loss: {losses[-1]}")
         return losses
-
     
-    def load(self, model_save_path):
+    def save(self, model_save_path):
         if isdir(model_save_path):
             model_save_path = f"{model_save_path}/weights.pt"
-        self.load_state_dict(torch.load(model_save_path))
+        os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
+        if self.separate_embeddings:
+            torch.save({'query_adapter': self.query_adapter.state_dict(), 'doc_adapter': self.doc_adapter.state_dict()}, model_save_path)
+        else:
+            torch.save(self.model.state_dict(), model_save_path)
+    
+    def load(self, model_save_path):
+        checkpoint = torch.load(model_save_path)
+        if 'query_adapter' in checkpoint and 'doc_adapter' in checkpoint:
+            self.query_adapter.load_state_dict(checkpoint['query_adapter'])
+            self.doc_adapter.load_state_dict(checkpoint['doc_adapter'])
+        else:
+            self.model.load_state_dict(checkpoint)

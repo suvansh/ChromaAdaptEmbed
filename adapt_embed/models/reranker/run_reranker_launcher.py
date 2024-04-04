@@ -54,7 +54,9 @@ def run_experiment(variant):
     reranker_model.fit(dataset, num_epochs=num_epochs, lr=lr, batch_size=batch_size, model_save_path=reranker_weights_dir)
 
     def get_results(exp_name, model, task):
-        return get_mteb_results(task, os.path.join(logger.get_snapshot_dir(), f"{exp_name}_results.json"), model=model)
+        results_dir = os.path.join(logger.get_snapshot_dir(), exp_name)
+        os.makedirs(results_dir, exist_ok=True)
+        return get_mteb_results(task, os.path.join(results_dir, "results.json"), model=model)
 
     results_reranked = get_results(exp_name, reranker_model, task)
     results_reranked_baseline = get_results(f"{exp_name}_baseline", reranker_baseline_model, task)

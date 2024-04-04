@@ -59,13 +59,11 @@ def run_experiment(variant):
         return get_mteb_results(task, os.path.join(results_dir, "results.json"), model=model)
 
     results_reranked = get_results(exp_name, reranker_model, reranker_task)
-    results_reranked_baseline = get_results(f"{exp_name}_baseline", reranker_baseline_model, reranker_task)
 
     external_results = {name: {task: json.load(open(results_file))} for results_file, name in results_files if os.path.exists(results_file)}
 
     baseline_results = get_mteb_results(task, os.path.join(proj_dir, 'results', model_name, f"{task}.json"), model=model)
     plot_comparison([(baseline_results, "Baseline"),
-                     (results_reranked_baseline, "Pre-Trained Reranker"),
                      (results_reranked, "Fine-tuned Reranker"),
                      *[(results, name) for name, results in external_results.items()]],
                     exp_name, variant)
@@ -79,7 +77,7 @@ if __name__ == "__main__":
             rerank_model_name=["distilroberta-base"],
             task=['CQADupstackEnglishRetrieval'],
             split=['test'],
-            num_epochs=[10],
+            num_epochs=[15],
             batch_size=[32],
             lr=[1e-2, 3e-3, 1e-3, 3e-4, 1e-4],
             data_negative_sampling=[True, False],

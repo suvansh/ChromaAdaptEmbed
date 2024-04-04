@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from mteb import MTEB
 from sentence_transformers import SentenceTransformer
-from adapt_embed.eval.reranker_retrieval import RerankerRetrievalTask
+
 from adapt_embed.models.linear.linear import LinearAdapter
 from adapt_embed.models.reranker.reranker import Reranker
 from adapt_embed.datasets import PairwiseScoreDataset
@@ -40,6 +40,8 @@ def run_experiment(variant):
     reranker_baseline_model = Reranker(rerank_model_name).to(device)
 
     task_class = MTEB(tasks=[task]).tasks[0]
+    # need to import after prev line to avoid error from search over subclasses
+    from adapt_embed.eval.reranker_retrieval import RerankerRetrievalTask
     reranker_task_class = RerankerRetrievalTask.from_task(type(task_class))()
     reranker_task_class.load_data()
 

@@ -5,8 +5,8 @@ import numpy as np
 from mteb import MTEB
 from sentence_transformers import SentenceTransformer
 
-from adapt_embed.models.linear.linear import LinearAdapter
 from adapt_embed.models.reranker.reranker import Reranker
+from adapt_embed.eval.reranker_retrieval import RerankerRetrievalTask
 from adapt_embed.datasets import PairwiseScoreDataset
 from adapt_embed.datasets.inputexample import InputExampleDataset
 from adapt_embed.utils import get_proj_dir, plot_comparison, get_device, get_mteb_results
@@ -39,9 +39,7 @@ def run_experiment(variant):
     reranker_model = Reranker(rerank_model_name).to(device)
     reranker_baseline_model = Reranker(rerank_model_name).to(device)
 
-    task_class = MTEB(tasks=[task]).tasks[0]
-    # need to import after prev line to avoid error from search over subclasses
-    from adapt_embed.eval.reranker_retrieval import RerankerRetrievalTask
+    task_class = MTEB(tasks=[task]).tasks[0]    
     reranker_task_class = RerankerRetrievalTask.from_task(type(task_class))()
     reranker_task_class.load_data()
 

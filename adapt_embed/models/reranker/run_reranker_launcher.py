@@ -80,7 +80,7 @@ if __name__ == "__main__":
             task=['CQADupstackEnglishRetrieval'],
             split=['test'],
             num_epochs=[10],
-            batch_size=[64],
+            batch_size=[32],
             lr=[1e-2, 3e-3, 1e-3, 3e-4, 1e-4],
             data_negative_sampling=[True, False],
             data_synthetic_gen=[True, False],

@@ -55,7 +55,7 @@ class RerankerRetrievalTask(AbsTaskRetrieval):
         scores = {}
         start_time = time()
         results = {}
-        for query_id, query_text in tqdm(list(queries.items())[:1]):
+        for query_id, query_text in tqdm(list(queries.items())[:50]):  # NOTE we're only doing the first 50 items because it takes 2 min per item
             query_corpus = [(query_text, corpus[doc_id]['text']) for doc_id in corpus.keys()]
             query_scores = model.model.predict(query_corpus, show_progress_bar=True, batch_size=batch_size)
             top_docs = sorted(zip(corpus.keys(), query_scores), key=lambda x: x[1], reverse=True)[:top_k]

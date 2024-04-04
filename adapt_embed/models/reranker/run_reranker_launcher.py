@@ -40,8 +40,8 @@ def run_experiment(variant):
     reranker_baseline_model = Reranker(rerank_model_name).to(device)
 
     task_class = MTEB(tasks=[task]).tasks[0]    
-    reranker_task_class = RerankerRetrievalTask.from_task(type(task_class))()
-    reranker_task_class.load_data()
+    reranker_task = RerankerRetrievalTask.from_task(type(task_class))()
+    reranker_task.load_data()
 
     dataset = InputExampleDataset(PairwiseScoreDataset(task_class, thresholded=True, relevance_threshold=relevance_threshold, split=split,
                                                        negative_sampling=data_negative_sampling,
@@ -58,8 +58,8 @@ def run_experiment(variant):
         os.makedirs(results_dir, exist_ok=True)
         return get_mteb_results(task, os.path.join(results_dir, "results.json"), model=model)
 
-    results_reranked = get_results(exp_name, reranker_model, task)
-    results_reranked_baseline = get_results(f"{exp_name}_baseline", reranker_baseline_model, task)
+    results_reranked = get_results(exp_name, reranker_model, reranker_task)
+    results_reranked_baseline = get_results(f"{exp_name}_baseline", reranker_baseline_model, reranker_task)
 
     external_results = {name: {task: json.load(open(results_file))} for results_file, name in results_files if os.path.exists(results_file)}
 

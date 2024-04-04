@@ -131,7 +131,8 @@ if __name__ == "__main__":
             loss_type=['triplet'],
             data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],
-            data_synthetic_gen=[True, False]
+            data_synthetic_gen=[True, False],
+            data_negative_sampling=[True, False]
         ),
         # pairwise
         dict(
@@ -144,7 +145,8 @@ if __name__ == "__main__":
             loss_type=['mse'],
             data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],
-            data_synthetic_gen=[True, False]
+            data_synthetic_gen=[True, False],
+            data_negative_sampling=[True, False]
         )
     ]
 

@@ -89,16 +89,16 @@ if __name__ == "__main__":
     """ hyperparameters """
     variants_list = [
         dict(
-            exp_prefix=['reranker-only-classifier'],
+            exp_prefix=['reranker-classifieronly'],
             model_name=["all-MiniLM-L6-v2"],
             rerank_model_name=["distilroberta-base"],
             task=['CQADupstackEnglishRetrieval'],
             split=['test'],
             num_epochs=[15],
             batch_size=[32],
-            lr=[1e-2, 3e-3, 1e-3, 3e-4, 1e-4],
+            lr=[3e-3, 1e-3, 3e-4, 1e-4, 3e-5],
             data_negative_sampling=[True, False],
-            data_synthetic_gen=[True, False],
+            data_synthetic_gen=[False],
             data_augmentation_threshold=[5],
             data_llm=['claude-3-sonnet-20240229'],
             tune_classifier_only=[True],

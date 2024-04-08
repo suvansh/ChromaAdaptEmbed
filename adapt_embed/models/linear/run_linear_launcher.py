@@ -29,6 +29,7 @@ def run_experiment(variant):
     data_negative_sampling = variant.get('data_negative_sampling', True)
     data_synthetic_gen = variant.get('data_synthetic_gen', False)
     data_synthetic_data_path = variant.get('data_synthetic_data_path', None)
+    data_use_gold_data = variant.get('data_use_gold_data', True)
     data_augmentation_threshold = variant.get('data_augmentation_threshold', 10)
     data_llm = variant.get('data_llm', 'gpt-4-turbo-preview')
 
@@ -51,6 +52,7 @@ def run_experiment(variant):
                                          negative_sampling=data_negative_sampling,
                                          synthetic_data=data_synthetic_gen,
                                          synthetic_data_path=data_synthetic_data_path,
+                                         use_gold_data=data_use_gold_data,
                                          data_augmentation_threshold=data_augmentation_threshold,
                                          llm=data_llm)
             else:
@@ -59,6 +61,7 @@ def run_experiment(variant):
                                                negative_sampling=data_negative_sampling,
                                                synthetic_data=data_synthetic_gen,
                                                synthetic_data_path=data_synthetic_data_path,
+                                               use_gold_data=data_use_gold_data,
                                                data_augmentation_threshold=data_augmentation_threshold,
                                                llm=data_llm)
         return dataset
@@ -120,20 +123,20 @@ def run_experiment(variant):
 if __name__ == "__main__":
     variants_list = [
         # triplet
-        dict(
-            model_name=["all-MiniLM-L6-v2"],
-            task=['CQADupstackEnglishRetrieval'],
-            split=['test'],
-            num_epochs=[15],
-            lr=[1e-2, 3e-3, 1e-3, 3e-4],
-            batch_size=[256],
-            triplet_margin=[0.3],
-            loss_type=['triplet'],
-            data_llm=['claude-3-sonnet-20240229'],
-            data_augmentation_threshold=[5],
-            data_synthetic_gen=[True, False],
-            data_negative_sampling=[True, False]
-        ),
+        # dict(
+        #     model_name=["all-MiniLM-L6-v2"],
+        #     task=['CQADupstackEnglishRetrieval'],
+        #     split=['test'],
+        #     num_epochs=[15],
+        #     lr=[1e-2, 3e-3, 1e-3, 3e-4],
+        #     batch_size=[256],
+        #     triplet_margin=[0.3],
+        #     loss_type=['triplet'],
+        #     data_llm=['claude-3-sonnet-20240229'],
+        #     data_augmentation_threshold=[5],
+        #     data_synthetic_gen=[True, False],
+        #     data_negative_sampling=[True, False]
+        # ),
         # pairwise
         dict(
             model_name=["all-MiniLM-L6-v2"],
@@ -146,7 +149,8 @@ if __name__ == "__main__":
             data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],
             data_synthetic_gen=[True, False],
-            data_negative_sampling=[True, False]
+            data_negative_sampling=[True, False],
+            data_use_gold_data=[True]
         )
     ]
 

@@ -25,6 +25,7 @@ class BaseDataset(Dataset, ABC):
                  negative_sampling=True,
                  synthetic_data=False,
                  synthetic_data_path=None,
+                 use_gold_data=True,
                  llm="gpt-4-turbo-preview",
                  data_augmentation_threshold=5,
                  split=None,
@@ -44,6 +45,7 @@ class BaseDataset(Dataset, ABC):
                 if synthetic_data_path is None, synthetic data is generated with LLM and saved to a default path.
                 if synthetic_data_path is a string path but doesn't exist, synthetic data is generated with LLM and saved to the path
             if synthetic_data is False: this parameter has no effect
+        :param use_gold_data: bool representing whether to use the gold data for the relevant docs. typically true, but toggle-able for ablations
         :param llm: str representing the LLM to use for generating synthetic data. only used if synthetic data is generated
         :param data_augmentation_threshold: int representing the number of relevant docs below which to augment data. only used if negative_sampling or synthetic_data is True
         :param split: str representing the split to use. defaults to the last eval split in the retrieval task
@@ -92,6 +94,7 @@ class BaseDataset(Dataset, ABC):
             self.data_augmentation_threshold = data_augmentation_threshold
             self.llm = llm
             self.synthetic_data_path = synthetic_data_path or os.path.join(get_proj_dir(), "data", self.task_name, f"synthetic_data_{self.llm}.json")
+            self.use_gold_data = use_gold_data
             if synthetic_data and not os.path.isfile(self.synthetic_data_path):
                 logger.warn(f"Generating up to {self.data_augmentation_threshold} synthetic documents each for {len(self.retrieval_task.queries[self.split])} queries with {self.llm}. This may take a while and cost money.")
 
@@ -122,8 +125,12 @@ class BaseDataset(Dataset, ABC):
         examples, num_examples = [], 10
         for query_id in query_ids:
             relevant_docs = self.retrieval_task.relevant_docs[self.split][query_id]
-            negatives[query_id] = {(doc_id, score, False) for doc_id, score in relevant_docs.items() if score < self.relevance_threshold}  # False indicates doc_id
-            positives[query_id] = {(doc_id, score, False) for doc_id, score in relevant_docs.items() if score >= self.relevance_threshold}  # False indicates doc_id
+            if self.use_gold_data:
+                negatives[query_id] = {(doc_id, score, False) for doc_id, score in relevant_docs.items() if score < self.relevance_threshold}  # False indicates doc_id
+                positives[query_id] = {(doc_id, score, False) for doc_id, score in relevant_docs.items() if score >= self.relevance_threshold}  # False indicates doc_id
+            else:
+                negatives[query_id] = set()
+                positives[query_id] = set()
             if len(examples) < num_examples:
                 # no more than 2 examples from a given query to diversify the examples
                 examples.extend([(self.retrieval_task.queries[self.split][query_id], stringify_corpus_item(self.retrieval_task.corpus[self.split][doc_id])) for doc_id, *_ in positives[query_id]][:2])
@@ -191,14 +198,12 @@ class BaseDataset(Dataset, ABC):
         attributes = {
             'proportional_relevance_threshold': self.proportional_relevance_threshold,
             'relevance_threshold': self.relevance_threshold,
-            # NOTE
-            # 'normalized': self.normalized,
-            # 'thresholded': self.thresholded,
             'min_relevance_score': self.min_relevance_score,
             'max_relevance_score': self.max_relevance_score,
             'negative_sampling': self.negative_sampling,
             'synthetic_data': self.synthetic_data,
             'synthetic_data_path': self.synthetic_data_path,
+            'use_gold_data': self.use_gold_data,
             'llm': self.llm,
             'data_augmentation_threshold': self.data_augmentation_threshold,
             'split': self.split,

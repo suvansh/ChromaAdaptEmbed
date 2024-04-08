@@ -57,7 +57,7 @@ def run_experiment(variant):
                                          llm=data_llm)
             else:
                 dataset = PairwiseScoreDataset(MTEB(tasks=[task]).tasks[0],
-                                               split=split, relevance_threshold=0.5, normalized=True,
+                                               split=split, relevance_threshold=0.5, normalized=True, eps=1e-8,
                                                negative_sampling=data_negative_sampling,
                                                synthetic_data=data_synthetic_gen,
                                                synthetic_data_path=data_synthetic_data_path,

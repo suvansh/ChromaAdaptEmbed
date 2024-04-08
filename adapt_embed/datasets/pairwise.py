@@ -14,6 +14,7 @@ class PairwiseScoreDataset(BaseDataset):
                  retrieval_task: Optional[AbsTaskRetrieval],
                  normalized=False,
                  thresholded=False,
+                 eps=0,
                  **kwargs):
         """
         Creates a dataset of query-document pairs and their relevance scores
@@ -25,6 +26,7 @@ class PairwiseScoreDataset(BaseDataset):
             raise ValueError("Cannot set both normalized and thresholded to True")
         self.normalized = normalized
         self.thresholded = thresholded
+        self.eps = eps
         super().__init__(retrieval_task, **kwargs)
         if self.min_relevance_score == self.max_relevance_score:
             self.normalized = False
@@ -44,9 +46,10 @@ class PairwiseScoreDataset(BaseDataset):
         doc_content = doc_id_or_doc if is_doc else stringify_corpus_item(self.retrieval_task.corpus[self.split][doc_id_or_doc])
         
         if self.thresholded:
-            score = 1 if score >= self.relevance_threshold else 0
+            score = 1-self.eps if score >= self.relevance_threshold else self.eps
         elif self.normalized:
             score = (score - self.min_relevance_score) / (self.max_relevance_score - self.min_relevance_score)
+            score = max(min(score, 1-self.eps), self.eps)  # clamp to [eps, 1-eps]
         
         return (
             self.retrieval_task.queries[self.split][query_id],
@@ -55,4 +58,4 @@ class PairwiseScoreDataset(BaseDataset):
         )
 
     def save(self, directory=None):
-        super().save(directory=directory, thresholded=self.thresholded, normalized=self.normalized)
+        super().save(directory=directory, thresholded=self.thresholded, normalized=self.normalized, eps=self.eps)

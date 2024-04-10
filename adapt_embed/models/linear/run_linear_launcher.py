@@ -121,36 +121,38 @@ def run_experiment(variant):
                     exp_name, variant)
 
 if __name__ == "__main__":
+    # tasks = ['ClimateFEVER', 'BSARDRetrieval']
+    # tasks = ['DBPedia', 'HagridRetrieval']
+    tasks = ['MSMARCO', 'QuoraRetrieval', 'SpanishPassageRetrievalS2S']
     variants_list = [
         # triplet
-        # dict(
-        #     model_name=["all-MiniLM-L6-v2"],
-        #     task=['CQADupstackEnglishRetrieval'],
-        #     split=['test'],
-        #     num_epochs=[15],
-        #     lr=[1e-2, 3e-3, 1e-3, 3e-4],
-        #     batch_size=[256],
-        #     triplet_margin=[0.3],
-        #     loss_type=['triplet'],
-        #     data_llm=['claude-3-sonnet-20240229'],
-        #     data_augmentation_threshold=[5],
-        #     data_synthetic_gen=[True, False],
-        #     data_negative_sampling=[True, False]
-        # ),
+        dict(
+            model_name=["all-MiniLM-L6-v2"],
+            task=tasks,
+            split=['test'],
+            num_epochs=[10],
+            lr=[1e-2, 3e-3, 1e-3, 3e-4],
+            batch_size=[256],
+            triplet_margin=[0.3],
+            loss_type=['triplet'],
+            data_llm=['claude-3-sonnet-20240229'],
+            data_augmentation_threshold=[5],
+            data_synthetic_gen=[False],
+            data_negative_sampling=[True]
+        ),
         # pairwise
         dict(
             model_name=["all-MiniLM-L6-v2"],
-            task=['CQADupstackEnglishRetrieval'],
+            task=tasks,
             split=['test'],
-            num_epochs=[15],
+            num_epochs=[10],
             lr=[1e-2, 3e-3, 1e-3, 3e-4],
             batch_size=[256],
             loss_type=['mse'],
             data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],
-            data_synthetic_gen=[True, False],
-            data_negative_sampling=[True, False],
-            data_use_gold_data=[True]
+            data_synthetic_gen=[False],
+            data_negative_sampling=[True, False]
         )
     ]
 
@@ -160,7 +162,7 @@ if __name__ == "__main__":
         launcher_util.run_experiment(
             run_experiment,
             variant=variant,
-            exp_prefix='linear-synthetic',
+            exp_prefix=f'linear-{variant["task"]}',
             mode='local',
             snapshot_mode='last',
             base_log_dir=os.path.join(proj_dir, 'results', 'logs')

@@ -106,33 +106,35 @@ def run_experiment(variant):
                     exp_name, variant)
 
 if __name__ == "__main__":
+    tasks = ['QuoraRetrieval']
+    tasks = ['SpanishPassageRetrievalS2S']
+    tasks = ['Ko-miracl']
     """ hyperparameters """
     variants_list = [
         # triplet loss
         dict(
-            exp_prefix=['finetune'],
             model_name=["all-MiniLM-L6-v2"],
-            task=['CQADupstackEnglishRetrieval'],
+            task=tasks,
             split=['test'],
             data_augmentation_threshold=[5],
             num_epochs=[12],
             batch_size=[64],
-            lr=[3e-3, 1e-3, 3e-4, 1e-4, 3e-5],
+            lr=[3e-3, 1e-3, 3e-4, 1e-4],
             score_triplet=[False],
-            triplet_margin=[1/3, 1, 3]
+            triplet_margin=[1/3]
         ),
         # converting triplets to classification and using loss on cosine similarity
         dict(
-            exp_prefix=['finetune-triplet-score'],
             model_name=["all-MiniLM-L6-v2"],
-            task=['CQADupstackEnglishRetrieval'],
+            task=tasks,
             split=['test'],
             data_augmentation_threshold=[5],
-            num_epochs=[15],
+            data_negative_sampling=[True, False],
+            num_epochs=[12],
             batch_size=[64],
-            lr=[3e-5, 1e-4, 3e-4, 1e-3, 3e-3],
+            lr=[3e-3, 1e-3, 3e-4, 1e-4],
             score_triplet=[True],
-            loss_type=['bce', 'mse']
+            loss_type=['mse']
         )
     ]
     results_files = []
@@ -147,7 +149,7 @@ if __name__ == "__main__":
         launcher_util.run_experiment(
             run_experiment,
             variant=variant,
-            exp_prefix=variant['exp_prefix'],
+            exp_prefix=f'finetune-{variant["task"]}',
             mode='local',
             snapshot_mode='last',
             base_log_dir=os.path.join(proj_dir, 'results', 'logs')

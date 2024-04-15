@@ -103,7 +103,7 @@ def run_experiment(variant):
     plot_comparison([(baseline_results, "Baseline"),
                      (results_finetune, "Finetuned"),
                      *[(results, name) for name, results in external_results.items()]],
-                    exp_name, variant)
+                    exp_name, variant, split=split)
 
 if __name__ == "__main__":
     tasks = ['QuoraRetrieval']

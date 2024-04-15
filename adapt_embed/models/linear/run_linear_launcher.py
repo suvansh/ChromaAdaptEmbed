@@ -119,7 +119,7 @@ def run_experiment(variant):
                      (results['query_adapted'], "Linear (Query-Only)"),
                      (results['query_first'], "Linear (Query-First)"),
                      (results['separate'], "Linear (Separate)")],
-                    exp_name, variant)
+                    exp_name, variant, split=split)
 
 if __name__ == "__main__":
     # tasks = ['ClimateFEVER', 'BSARDRetrieval']

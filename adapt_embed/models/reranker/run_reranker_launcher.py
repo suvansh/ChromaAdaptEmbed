@@ -76,6 +76,7 @@ def run_experiment(variant):
                              *[(results, name) for name, results in external_results.items()]],
                              exp_name=f"{exp_name}_{total_epochs}_epochs",
                              variant=variant,
+                             split=split
                              save_dir=os.path.join(logger.get_snapshot_dir(), 'imgs', f"{total_epochs}_epochs"))
     else:
         reranker_model.fit(dataset, num_epochs=num_epochs, lr=lr, batch_size=batch_size, model_save_path=reranker_weights_dir)
@@ -83,7 +84,7 @@ def run_experiment(variant):
         plot_comparison([(baseline_results, "Baseline"),
                         (results_reranked, "Fine-tuned Reranker"),
                         *[(results, name) for name, results in external_results.items()]],
-                        exp_name, variant)
+                        exp_name, variant, split=split)
 
 if __name__ == "__main__":
     """ hyperparameters """

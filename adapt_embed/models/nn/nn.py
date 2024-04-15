@@ -69,7 +69,8 @@ class NNAdapter(nn.Module):
             lr=3e-3,
             model_save_path: Optional[str]=None,
             optimizer_class=optim.AdamW,
-            **dataset_kwargs):
+            subset_frac=1.0,
+            **kwargs):
         # set up loss type
         if loss_type is None:
             loss_type = 'mse' if isinstance(retrieval_task_or_data, PairwiseScoreDataset) else 'triplet'
@@ -79,11 +80,16 @@ class NNAdapter(nn.Module):
         # set up training data
         if isinstance(retrieval_task_or_data, AbsTaskRetrieval):
             if loss_type == 'triplet':
-                retrieval_data = TripletDataset(retrieval_task_or_data, **dataset_kwargs)
+                retrieval_data = TripletDataset(retrieval_task_or_data, **kwargs)
             else:
-                retrieval_data = PairwiseScoreDataset(retrieval_task_or_data, **dataset_kwargs)
+                retrieval_data = PairwiseScoreDataset(retrieval_task_or_data, **kwargs)
         else:
             retrieval_data = retrieval_task_or_data
+        if subset_frac < 1.0:
+            assert subset_frac > 0.0, "subset_frac must be between 0.0 and 1.0"
+            retrieval_data, _ = torch.utils.data.random_split(retrieval_data,
+                                                              [subset_frac, 1-subset_frac],
+                                                              generator=torch.Generator().manual_seed(kwargs.get('seed', 42)))
         train_data = DataLoader(retrieval_data, batch_size=batch_size, shuffle=True)
 
         optimizer = optimizer_class(self.parameters(), lr=lr)

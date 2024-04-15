@@ -31,6 +31,7 @@ def run_experiment(variant):
     data_synthetic_data_path = variant.get('data_synthetic_data_path', None)
     data_use_gold_data = variant.get('data_use_gold_data', True)
     data_augmentation_threshold = variant.get('data_augmentation_threshold', 10)
+    data_subset_frac = variant.get('data_subset_frac', 1.0)
     data_llm = variant.get('data_llm', 'gpt-4-turbo-preview')
 
     if triplet_margin is None and loss_type == 'triplet':
@@ -76,7 +77,7 @@ def run_experiment(variant):
             adapted_model.load(weights_file)
         else:
             print(f"Training {adapter_type} Linear Adapter...")
-            losses = adapted_model.fit(get_dataset(), num_epochs=num_epochs, lr=lr, batch_size=batch_size, loss_type=loss_type, margin=triplet_margin, model_save_path=weights_file)
+            losses = adapted_model.fit(get_dataset(), subset_frac=data_subset_frac, num_epochs=num_epochs, lr=lr, batch_size=batch_size, loss_type=loss_type, margin=triplet_margin, model_save_path=weights_file)
         results = get_results(adapted_model, task)
         # log last first so all the results keys are added
         logger.record_dict({'epoch': num_epochs-1, 'loss': losses[-1], **results[task][split]})
@@ -123,36 +124,38 @@ def run_experiment(variant):
 if __name__ == "__main__":
     # tasks = ['ClimateFEVER', 'BSARDRetrieval']
     # tasks = ['DBPedia', 'HagridRetrieval']
-    tasks = ['MSMARCO', 'QuoraRetrieval', 'SpanishPassageRetrievalS2S']
+    # tasks = ['MSMARCO', 'QuoraRetrieval', 'SpanishPassageRetrievalS2S']
+    tasks = ['CQADupstackEnglishRetrieval']
     variants_list = [
-        # triplet
-        dict(
-            model_name=["all-MiniLM-L6-v2"],
-            task=tasks,
-            split=['test'],
-            num_epochs=[10],
-            lr=[1e-2, 3e-3, 1e-3, 3e-4],
-            batch_size=[256],
-            triplet_margin=[0.3],
-            loss_type=['triplet'],
-            data_llm=['claude-3-sonnet-20240229'],
-            data_augmentation_threshold=[5],
-            data_synthetic_gen=[False],
-            data_negative_sampling=[True]
-        ),
+        # # triplet
+        # dict(
+        #     model_name=["all-MiniLM-L6-v2"],
+        #     task=tasks,
+        #     split=['test'],
+        #     num_epochs=[10],
+        #     lr=[3e-3],
+        #     batch_size=[256],
+        #     triplet_margin=[0.3],
+        #     loss_type=['triplet'],
+        #     data_llm=['claude-3-sonnet-20240229'],
+        #     data_augmentation_threshold=[5],
+        #     data_synthetic_gen=[False],
+        #     data_negative_sampling=[True],
+        # ),
         # pairwise
         dict(
             model_name=["all-MiniLM-L6-v2"],
             task=tasks,
             split=['test'],
             num_epochs=[10],
-            lr=[1e-2, 3e-3, 1e-3, 3e-4],
+            lr=[3e-3],
             batch_size=[256],
             loss_type=['mse'],
             data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],
             data_synthetic_gen=[False],
-            data_negative_sampling=[True, False]
+            data_negative_sampling=[True],
+            data_subset_frac=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         )
     ]
 

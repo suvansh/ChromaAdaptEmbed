@@ -54,7 +54,8 @@ def run_experiment(variant):
                                      split=split, relevance_threshold=0.5,
                                      negative_sampling=data_negative_sampling,
                                      synthetic_data=data_synthetic_gen,
-                                     data_augmentation_threshold=data_augmentation_threshold
+                                     data_augmentation_threshold=data_augmentation_threshold,
+                                     eval_splits=[split, eval_split]
                             ), score_triplet=score_triplet
                         )
         return dataset

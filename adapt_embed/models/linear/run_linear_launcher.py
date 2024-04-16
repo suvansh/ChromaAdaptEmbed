@@ -56,7 +56,8 @@ def run_experiment(variant):
                                          synthetic_data_path=data_synthetic_data_path,
                                          use_gold_data=data_use_gold_data,
                                          data_augmentation_threshold=data_augmentation_threshold,
-                                         llm=data_llm)
+                                         llm=data_llm,
+                                         eval_splits=[split, eval_split])
             else:
                 dataset = PairwiseScoreDataset(MTEB(tasks=[task]).tasks[0],
                                                split=split, relevance_threshold=0.5, normalized=True, eps=1e-8,
@@ -65,7 +66,8 @@ def run_experiment(variant):
                                                synthetic_data_path=data_synthetic_data_path,
                                                use_gold_data=data_use_gold_data,
                                                data_augmentation_threshold=data_augmentation_threshold,
-                                               llm=data_llm)
+                                               llm=data_llm,
+                                               eval_splits=[split, eval_split])
         return dataset
     
     def get_results(model, task, eval_split=eval_split):

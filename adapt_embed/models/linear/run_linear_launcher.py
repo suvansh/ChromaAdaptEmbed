@@ -21,6 +21,7 @@ def run_experiment(variant):
     model_name = variant['model_name']
     task = variant['task']
     split = variant['split']
+    eval_split = variant.get('eval_split', split)
     num_epochs = variant['num_epochs']
     lr = variant['lr']
     batch_size = variant['batch_size']
@@ -67,8 +68,8 @@ def run_experiment(variant):
                                                llm=data_llm)
         return dataset
     
-    def get_results(model, task):
-        return get_mteb_results(task, os.path.join(logger.get_snapshot_dir(), 'results.json'), model=model)
+    def get_results(model, task, eval_split=eval_split):
+        return get_mteb_results(task, os.path.join(logger.get_snapshot_dir(), 'results.json'), model=model, eval_splits=[eval_split])
 
     def train_and_evaluate(adapted_model, weights_file, adapter_type, force=False):
         os.makedirs(os.path.dirname(weights_file), exist_ok=True)
@@ -80,7 +81,7 @@ def run_experiment(variant):
             losses = adapted_model.fit(get_dataset(), subset_frac=data_subset_frac, num_epochs=num_epochs, lr=lr, batch_size=batch_size, loss_type=loss_type, margin=triplet_margin, model_save_path=weights_file)
         results = get_results(adapted_model, task)
         # log last first so all the results keys are added
-        logger.record_dict({'epoch': num_epochs-1, 'loss': losses[-1], **results[task][split]})
+        logger.record_dict({'epoch': num_epochs-1, 'loss': losses[-1], **results[task][eval_split]})
         logger.dump_tabular()
         for i, loss in enumerate(losses[:-1]):  # log rest
             logger.record_dict({'epoch': i, 'loss': loss})
@@ -113,40 +114,42 @@ def run_experiment(variant):
         separate_adapted_model = LinearAdapter(model, model.get_sentence_embedding_dimension(), separate_embeddings=True).to(device)
         results['separate'] = train_and_evaluate(separate_adapted_model, separate_weights_file, 'Separate')
 
-    baseline_results = get_mteb_results(task, os.path.join(proj_dir, 'results', model_name, f"{task}.json"), model=model)
+    baseline_results = get_mteb_results(task, os.path.join(proj_dir, 'results', model_name, f"{task}.json"), model=model, eval_splits=[eval_split])
     plot_comparison([(baseline_results, "Baseline"),
                      (results['adapted'], "Linear (Joint)"),
                      (results['query_adapted'], "Linear (Query-Only)"),
                      (results['query_first'], "Linear (Query-First)"),
                      (results['separate'], "Linear (Separate)")],
-                    exp_name, variant, split=split)
+                    exp_name, variant, split=eval_split)
 
 if __name__ == "__main__":
     # tasks = ['ClimateFEVER', 'BSARDRetrieval']
     # tasks = ['DBPedia', 'HagridRetrieval']
-    # tasks = ['MSMARCO', 'QuoraRetrieval', 'SpanishPassageRetrievalS2S']
-    tasks = ['CQADupstackEnglishRetrieval']
+    # tasks = ['MSMARCO', 'CQADupstackEnglishRetrieval', 'SpanishPassageRetrievalS2S']
+    tasks = ['QuoraRetrieval', 'SciFactRetrieval', 'MSMARCO', 'QuoraPLRetrieval']
     variants_list = [
-        # # triplet
-        # dict(
-        #     model_name=["all-MiniLM-L6-v2"],
-        #     task=tasks,
-        #     split=['test'],
-        #     num_epochs=[10],
-        #     lr=[3e-3],
-        #     batch_size=[256],
-        #     triplet_margin=[0.3],
-        #     loss_type=['triplet'],
-        #     data_llm=['claude-3-sonnet-20240229'],
-        #     data_augmentation_threshold=[5],
-        #     data_synthetic_gen=[False],
-        #     data_negative_sampling=[True],
-        # ),
+        # triplet
+        dict(
+            model_name=["all-MiniLM-L6-v2"],
+            task=tasks,
+            split=['dev'],
+            eval_split=['test'],
+            num_epochs=[10],
+            lr=[3e-3],
+            batch_size=[256],
+            triplet_margin=[0.3],
+            loss_type=['triplet'],
+            data_llm=['claude-3-sonnet-20240229'],
+            data_augmentation_threshold=[5],
+            data_synthetic_gen=[False],
+            data_negative_sampling=[True]
+        ),
         # pairwise
         dict(
             model_name=["all-MiniLM-L6-v2"],
             task=tasks,
-            split=['test'],
+            split=['dev'],
+            eval_split=['test'],
             num_epochs=[10],
             lr=[3e-3],
             batch_size=[256],
@@ -154,8 +157,7 @@ if __name__ == "__main__":
             data_llm=['claude-3-sonnet-20240229'],
             data_augmentation_threshold=[5],
             data_synthetic_gen=[False],
-            data_negative_sampling=[True],
-            data_subset_frac=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            data_negative_sampling=[True]
         )
     ]
 

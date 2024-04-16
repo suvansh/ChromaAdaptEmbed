@@ -148,12 +148,12 @@ def gen_synthetic_data(query, n, examples=None, llm="gpt-4-turbo-preview"):
         raise ValueError(f"Unsupported LLM model: {llm}")
     return documents
 
-def get_mteb_results(task, results_file, model=None):
+def get_mteb_results(task, results_file, model=None, eval_splits=None):
     if os.path.exists(results_file):
         with open(results_file) as json_file:
             results = {task: json.load(json_file)}
     elif model is not None:
-        results = MTEB(tasks=[task]).run(model, output_folder=os.path.dirname(results_file))
+        results = MTEB(tasks=[task]).run(model, output_folder=os.path.dirname(results_file), eval_splits=eval_splits)
     else:
         raise ValueError("Either model or existing results_file must be provided.")
     return results

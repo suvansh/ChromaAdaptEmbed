@@ -23,6 +23,7 @@ def run_experiment(variant):
     model_name = variant['model_name']
     task = variant['task']
     split = variant['split']
+    eval_split = variant.get('eval_split', split)
     num_epochs = variant['num_epochs']
     batch_size = variant['batch_size']
     lr = variant['lr']
@@ -58,8 +59,8 @@ def run_experiment(variant):
                         )
         return dataset
     
-    def get_results(model, task):
-        return get_mteb_results(task, os.path.join(logger.get_snapshot_dir(), 'results.json'), model=model)
+    def get_results(model, task, eval_split=eval_split):
+        return get_mteb_results(task, os.path.join(logger.get_snapshot_dir(), 'results.json'), model=model, eval_splits=[eval_split])
 
     def train_and_evaluate(model, save_dir, results_every=0):
         """
@@ -87,7 +88,7 @@ def run_experiment(variant):
             optimizer_params={'lr': lr}
         )
         results = get_results(model, task)
-        logger.record_dict({**evaluation_dicts[-1], **results[task][split]})
+        logger.record_dict({**evaluation_dicts[-1], **results[task][eval_split]})
         logger.dump_tabular()
         for eval_dict in evaluation_dicts[:-1]:
             logger.record_dict(eval_dict)
@@ -99,23 +100,25 @@ def run_experiment(variant):
 
     external_results = {name: {task: json.load(open(results_file))} for results_file, name in results_files if os.path.exists(results_file)}
 
-    baseline_results = get_mteb_results(task, os.path.join(proj_dir, 'results', model_name, f"{task}.json"), model=model)
+    baseline_results = get_mteb_results(task, os.path.join(proj_dir, 'results', model_name, f"{task}.json"), model=model, eval_splits=[eval_split])
     plot_comparison([(baseline_results, "Baseline"),
                      (results_finetune, "Finetuned"),
                      *[(results, name) for name, results in external_results.items()]],
-                    exp_name, variant, split=split)
+                    exp_name, variant, split=eval_split)
 
 if __name__ == "__main__":
-    tasks = ['QuoraRetrieval']
-    tasks = ['SpanishPassageRetrievalS2S']
-    tasks = ['Ko-miracl']
+    # tasks = ['QuoraRetrieval']
+    # tasks = ['SpanishPassageRetrievalS2S']
+    # tasks = ['Ko-miracl']
+    tasks = ['QuoraRetrieval', 'SciFactRetrieval', 'MSMARCO', 'QuoraPLRetrieval']
     """ hyperparameters """
     variants_list = [
         # triplet loss
         dict(
             model_name=["all-MiniLM-L6-v2"],
             task=tasks,
-            split=['test'],
+            split=['dev'],
+            eval_split=['test'],
             data_augmentation_threshold=[5],
             num_epochs=[12],
             batch_size=[64],
@@ -127,7 +130,8 @@ if __name__ == "__main__":
         dict(
             model_name=["all-MiniLM-L6-v2"],
             task=tasks,
-            split=['test'],
+            split=['dev'],
+            eval_split=['test'],
             data_augmentation_threshold=[5],
             data_negative_sampling=[True, False],
             num_epochs=[12],
